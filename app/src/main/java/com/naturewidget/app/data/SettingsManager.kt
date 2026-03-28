@@ -10,12 +10,22 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+// DataStore should be a singleton - define at top level
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "nature_widget_settings")
 
-class SettingsManager(private val context: Context) {
+class SettingsManager private constructor(private val context: Context) {
     
     companion object {
         private val USER_LOGIN = stringPreferencesKey("user_login")
+        
+        @Volatile
+        private var INSTANCE: SettingsManager? = null
+        
+        fun getInstance(context: Context): SettingsManager {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: SettingsManager(context.applicationContext).also { INSTANCE = it }
+            }
+        }
     }
     
     val userLoginFlow: Flow<String> = context.dataStore.data
@@ -24,12 +34,20 @@ class SettingsManager(private val context: Context) {
         }
     
     suspend fun getUserLogin(): String {
-        return userLoginFlow.first()
+        return try {
+            userLoginFlow.first()
+        } catch (e: Exception) {
+            ""
+        }
     }
     
     suspend fun setUserLogin(username: String) {
-        context.dataStore.edit { preferences ->
-            preferences[USER_LOGIN] = username.trim()
+        try {
+            context.dataStore.edit { preferences ->
+                preferences[USER_LOGIN] = username.trim()
+            }
+        } catch (e: Exception) {
+            // Log error but don't crash
         }
     }
 }

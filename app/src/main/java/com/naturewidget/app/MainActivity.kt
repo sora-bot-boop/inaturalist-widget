@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     MainScreen(
                         repository = NatureRepository(this),
-                        settingsManager = SettingsManager(this),
+                        settingsManager = SettingsManager.getInstance(this),
                         onStartWidgetUpdates = {
                             NatureWidgetWorker.enqueuePeriodic(this)
                         }
@@ -70,11 +70,15 @@ fun MainScreen(
     
     // Load saved settings
     LaunchedEffect(Unit) {
-        settingsManager.userLoginFlow.collect { saved ->
-            savedUserLogin = saved
-            if (userLogin.isEmpty()) {
-                userLogin = saved
+        try {
+            settingsManager.userLoginFlow.collect { saved ->
+                savedUserLogin = saved
+                if (userLogin.isEmpty()) {
+                    userLogin = saved
+                }
             }
+        } catch (e: Exception) {
+            // Ignore errors, use defaults
         }
     }
     

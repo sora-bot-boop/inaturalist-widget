@@ -82,7 +82,7 @@ class NatureWidgetWorker(
         
         return try {
             val repository = NatureRepository(context)
-            val settings = SettingsManager(context)
+            val settings = SettingsManager.getInstance(context)
             
             // Get user settings
             val userLogin = settings.getUserLogin()
