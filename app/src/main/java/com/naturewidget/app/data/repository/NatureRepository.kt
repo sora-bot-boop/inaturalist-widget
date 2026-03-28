@@ -28,6 +28,7 @@ class NatureRepository(private val context: Context) {
     suspend fun getRandomObservation(
         taxonId: Int? = null,
         iconicTaxa: String? = null, // e.g., "Aves" for birds, "Mammalia" for mammals
+        userLogin: String? = null, // iNaturalist username
         lat: Double? = null,
         lng: Double? = null,
         radius: Int? = null
@@ -36,6 +37,7 @@ class NatureRepository(private val context: Context) {
             val response = api.getObservations(
                 taxonId = taxonId,
                 iconicTaxa = iconicTaxa,
+                userLogin = userLogin?.takeIf { it.isNotBlank() },
                 lat = lat,
                 lng = lng,
                 radius = radius,

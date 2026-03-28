@@ -6,6 +6,7 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.work.*
+import com.naturewidget.app.data.SettingsManager
 import com.naturewidget.app.data.repository.NatureRepository
 import java.util.concurrent.TimeUnit
 
@@ -81,9 +82,15 @@ class NatureWidgetWorker(
         
         return try {
             val repository = NatureRepository(context)
+            val settings = SettingsManager(context)
+            
+            // Get user settings
+            val userLogin = settings.getUserLogin()
             
             // Fetch a random observation
-            val observationResult = repository.getRandomObservation()
+            val observationResult = repository.getRandomObservation(
+                userLogin = userLogin
+            )
             
             if (observationResult.isFailure) {
                 Log.e(TAG, "Failed to fetch observation", observationResult.exceptionOrNull())

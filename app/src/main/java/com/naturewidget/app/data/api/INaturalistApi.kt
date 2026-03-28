@@ -15,6 +15,7 @@ interface INaturalistApi {
         @Query("order_by") orderBy: String = "random",
         @Query("taxon_id") taxonId: Int? = null,
         @Query("iconic_taxa") iconicTaxa: String? = null,
+        @Query("user_login") userLogin: String? = null,
         @Query("lat") lat: Double? = null,
         @Query("lng") lng: Double? = null,
         @Query("radius") radius: Int? = null,

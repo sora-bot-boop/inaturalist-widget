@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import com.naturewidget.app.data.SettingsManager
 import com.naturewidget.app.data.api.Observation
 import com.naturewidget.app.data.repository.NatureRepository
 import com.naturewidget.app.ui.theme.NatureWidgetTheme
@@ -40,6 +41,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     MainScreen(
                         repository = NatureRepository(this),
+                        settingsManager = SettingsManager(this),
                         onStartWidgetUpdates = {
                             NatureWidgetWorker.enqueuePeriodic(this)
                         }
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen(
     repository: NatureRepository,
+    settingsManager: SettingsManager,
     onStartWidgetUpdates: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
@@ -61,12 +64,28 @@ fun MainScreen(
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     
+    // Settings state
+    var userLogin by remember { mutableStateOf("") }
+    var savedUserLogin by remember { mutableStateOf("") }
+    
+    // Load saved settings
+    LaunchedEffect(Unit) {
+        settingsManager.userLoginFlow.collect { saved ->
+            savedUserLogin = saved
+            if (userLogin.isEmpty()) {
+                userLogin = saved
+            }
+        }
+    }
+    
     fun loadNewObservation() {
         scope.launch {
             isLoading = true
             error = null
             
-            val result = repository.getRandomObservation()
+            val result = repository.getRandomObservation(
+                userLogin = savedUserLogin
+            )
             
             result.fold(
                 onSuccess = { observation ->
@@ -83,10 +102,19 @@ fun MainScreen(
         }
     }
     
+    fun saveSettings() {
+        scope.launch {
+            settingsManager.setUserLogin(userLogin)
+            savedUserLogin = userLogin.trim()
+            // Reload with new settings
+            loadNewObservation()
+        }
+    }
+    
     // Load initial observation
     LaunchedEffect(Unit) {
-        loadNewObservation()
         onStartWidgetUpdates()
+        loadNewObservation()
     }
     
     Scaffold(
@@ -108,6 +136,64 @@ fun MainScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Settings Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "⚙️ Settings",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    OutlinedTextField(
+                        value = userLogin,
+                        onValueChange = { userLogin = it },
+                        label = { Text("iNaturalist Username") },
+                        placeholder = { Text("e.g., kueda") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Leave empty for random observations from all users",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Button(
+                        onClick = { saveSettings() },
+                        enabled = userLogin.trim() != savedUserLogin,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1a472a)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Save & Refresh")
+                    }
+                    
+                    if (savedUserLogin.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "✓ Showing observations from: $savedUserLogin",
+                            fontSize = 12.sp,
+                            color = Color(0xFF2E7D32)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             // Instructions
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -123,9 +209,10 @@ fun MainScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "1. Add the Nature Widget to your home screen\n" +
-                               "2. Tap the widget to load a new nature photo\n" +
-                               "3. Images update automatically every 4 hours",
+                        text = "1. Enter your iNaturalist username above\n" +
+                               "2. Add the widget to your home screen\n" +
+                               "3. Tap the widget to load a new photo\n" +
+                               "4. Images update automatically every 4 hours",
                         fontSize = 14.sp
                     )
                 }
@@ -160,7 +247,8 @@ fun MainScreen(
                         Text(
                             text = error!!,
                             color = Color.White,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
                     currentObservation != null -> {
@@ -204,6 +292,13 @@ fun MainScreen(
                                                 text = "📍 $place",
                                                 color = Color.Gray,
                                                 fontSize = 12.sp
+                                            )
+                                        }
+                                        currentObservation!!.user?.login?.let { user ->
+                                            Text(
+                                                text = "👤 $user",
+                                                color = Color.Gray,
+                                                fontSize = 11.sp
                                             )
                                         }
                                     }
