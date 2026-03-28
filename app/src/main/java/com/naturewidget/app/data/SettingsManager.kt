@@ -1,22 +1,17 @@
 package com.naturewidget.app.data
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import android.content.SharedPreferences
 
-// DataStore should be a singleton - define at top level
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "nature_widget_settings")
-
-class SettingsManager private constructor(private val context: Context) {
+class SettingsManager private constructor(context: Context) {
+    
+    private val prefs: SharedPreferences = context.getSharedPreferences(
+        "nature_widget_prefs", 
+        Context.MODE_PRIVATE
+    )
     
     companion object {
-        private val USER_LOGIN = stringPreferencesKey("user_login")
+        private const val KEY_USER_LOGIN = "user_login"
         
         @Volatile
         private var INSTANCE: SettingsManager? = null
@@ -28,26 +23,11 @@ class SettingsManager private constructor(private val context: Context) {
         }
     }
     
-    val userLoginFlow: Flow<String> = context.dataStore.data
-        .map { preferences ->
-            preferences[USER_LOGIN] ?: ""
-        }
-    
-    suspend fun getUserLogin(): String {
-        return try {
-            userLoginFlow.first()
-        } catch (e: Exception) {
-            ""
-        }
+    fun getUserLogin(): String {
+        return prefs.getString(KEY_USER_LOGIN, "") ?: ""
     }
     
-    suspend fun setUserLogin(username: String) {
-        try {
-            context.dataStore.edit { preferences ->
-                preferences[USER_LOGIN] = username.trim()
-            }
-        } catch (e: Exception) {
-            // Log error but don't crash
-        }
+    fun setUserLogin(username: String) {
+        prefs.edit().putString(KEY_USER_LOGIN, username.trim()).apply()
     }
 }

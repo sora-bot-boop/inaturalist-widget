@@ -22,15 +22,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import com.naturewidget.app.data.SettingsManager
 import com.naturewidget.app.data.api.Observation
 import com.naturewidget.app.data.repository.NatureRepository
+import com.naturewidget.app.widget.NatureWidgetWorker
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        val repository = NatureRepository(applicationContext)
+        val appContext = applicationContext
+        val repository = NatureRepository(appContext)
+        val settings = SettingsManager.getInstance(appContext)
         
         setContent {
             MaterialTheme {
@@ -38,7 +42,13 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen(repository = repository)
+                    MainScreen(
+                        repository = repository,
+                        settings = settings,
+                        onStartWidgetUpdates = {
+                            NatureWidgetWorker.enqueuePeriodic(appContext)
+                        }
+                    )
                 }
             }
         }
@@ -47,22 +57,33 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(repository: NatureRepository) {
+fun MainScreen(
+    repository: NatureRepository,
+    settings: SettingsManager,
+    onStartWidgetUpdates: () -> Unit
+) {
     val scope = rememberCoroutineScope()
     var currentObservation by remember { mutableStateOf<Observation?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    
+    // Settings state
+    var userLogin by remember { mutableStateOf(settings.getUserLogin()) }
+    var savedUserLogin by remember { mutableStateOf(settings.getUserLogin()) }
     
     fun loadNewObservation() {
         scope.launch {
             isLoading = true
             error = null
             
-            val result = repository.getRandomObservation()
+            val result = repository.getRandomObservation(
+                userLogin = savedUserLogin.takeIf { it.isNotBlank() }
+            )
             
             result.fold(
                 onSuccess = { observation ->
                     currentObservation = observation
+                    repository.downloadAndCacheImage(observation)
                 },
                 onFailure = { e ->
                     error = e.message ?: "Failed to load observation"
@@ -71,6 +92,17 @@ fun MainScreen(repository: NatureRepository) {
             
             isLoading = false
         }
+    }
+    
+    fun saveSettings() {
+        settings.setUserLogin(userLogin)
+        savedUserLogin = userLogin.trim()
+        loadNewObservation()
+    }
+    
+    // Start widget updates on launch
+    LaunchedEffect(Unit) {
+        onStartWidgetUpdates()
     }
     
     Scaffold(
@@ -92,6 +124,64 @@ fun MainScreen(repository: NatureRepository) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Settings Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "⚙️ Settings",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    OutlinedTextField(
+                        value = userLogin,
+                        onValueChange = { userLogin = it },
+                        label = { Text("iNaturalist Username") },
+                        placeholder = { Text("e.g., kueda") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Leave empty for random observations from all users",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Button(
+                        onClick = { saveSettings() },
+                        enabled = userLogin.trim() != savedUserLogin,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF1a472a)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Save & Refresh")
+                    }
+                    
+                    if (savedUserLogin.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "✓ Showing observations from: $savedUserLogin",
+                            fontSize = 12.sp,
+                            color = Color(0xFF2E7D32)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
             // Instructions
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -101,13 +191,16 @@ fun MainScreen(repository: NatureRepository) {
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "🌿 Nature Widget",
+                        text = "🌿 How to use",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Tap the button below to load a random nature observation from iNaturalist!",
+                        text = "1. Enter your iNaturalist username above (optional)\n" +
+                               "2. Add the widget to your home screen\n" +
+                               "3. Tap the widget to load new photos\n" +
+                               "4. Images update automatically every 4 hours",
                         fontSize = 14.sp
                     )
                 }
@@ -187,6 +280,13 @@ fun MainScreen(repository: NatureRepository) {
                                                 text = "📍 $place",
                                                 color = Color.Gray,
                                                 fontSize = 12.sp
+                                            )
+                                        }
+                                        currentObservation!!.user?.login?.let { user ->
+                                            Text(
+                                                text = "👤 $user",
+                                                color = Color.Gray,
+                                                fontSize = 11.sp
                                             )
                                         }
                                     }

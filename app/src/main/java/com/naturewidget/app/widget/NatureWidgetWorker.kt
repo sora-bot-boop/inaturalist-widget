@@ -85,7 +85,7 @@ class NatureWidgetWorker(
             val settings = SettingsManager.getInstance(context)
             
             // Get user settings
-            val userLogin = settings.getUserLogin()
+            val userLogin = settings.getUserLogin().takeIf { it.isNotBlank() }
             
             // Fetch a random observation
             val observationResult = repository.getRandomObservation(
