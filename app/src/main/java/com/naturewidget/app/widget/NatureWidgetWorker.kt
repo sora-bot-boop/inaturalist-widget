@@ -21,9 +21,12 @@ class NatureWidgetWorker(
         private const val WORK_NAME_ONETIME = "nature_widget_onetime"
         
         /**
-         * Schedule periodic updates (every 4 hours by default)
+         * Schedule periodic updates based on user settings
          */
-        fun enqueuePeriodic(context: Context, intervalHours: Long = 4) {
+        fun enqueuePeriodic(context: Context) {
+            val settings = SettingsManager.getInstance(context)
+            val intervalHours = settings.getRefreshInterval().toLong()
+            
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
@@ -39,7 +42,7 @@ class NatureWidgetWorker(
             WorkManager.getInstance(context)
                 .enqueueUniquePeriodicWork(
                     WORK_NAME_PERIODIC,
-                    ExistingPeriodicWorkPolicy.KEEP,
+                    ExistingPeriodicWorkPolicy.REPLACE,
                     request
                 )
             
