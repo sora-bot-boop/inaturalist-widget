@@ -1,0 +1,31 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio
+.idea/
+*.iml
+local.properties
+
+# Kotlin
+*.class
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# APKs
+*.apk
+*.aab

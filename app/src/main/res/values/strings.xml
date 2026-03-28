@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nature Widget</string>
+    <string name="widget_name">Nature Photo</string>
+    <string name="widget_description">Display beautiful nature photos from iNaturalist</string>
+</resources>
