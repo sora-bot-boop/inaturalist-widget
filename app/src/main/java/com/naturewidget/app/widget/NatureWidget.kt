@@ -3,11 +3,11 @@ package com.naturewidget.app.widget
 import android.content.Context
 import android.graphics.BitmapFactory
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.*
 import androidx.glance.action.ActionParameters
-import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
 import androidx.glance.appwidget.action.ActionCallback
@@ -37,20 +37,22 @@ class NatureWidget : GlanceAppWidget() {
     }
 }
 
+// Color constants
+private val DarkGreen = Color(0xFF1a472a)
+private val SemiTransparentBlack = Color(0x99000000)
+private val White = Color.White
+private val LightGray = Color(0xFFCCCCCC)
+private val MediumGray = Color(0xFFAAAAAA)
+
 @Composable
 private fun NatureWidgetContent(
     imageFile: java.io.File?,
     data: ObservationDisplayData?
 ) {
-    val backgroundColor = ColorProvider(
-        day = androidx.glance.R.color.glance_colorBackground,
-        night = androidx.glance.R.color.glance_colorBackground
-    )
-    
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(ImageProvider(android.R.drawable.screen_background_dark))
+            .background(ColorProvider(DarkGreen))
             .cornerRadius(16.dp)
             .clickable(actionRunCallback<RefreshAction>()),
         contentAlignment = Alignment.BottomStart
@@ -71,13 +73,13 @@ private fun NatureWidgetContent(
             Box(
                 modifier = GlanceModifier
                     .fillMaxSize()
-                    .background(ColorProvider(android.graphics.Color.parseColor("#1a472a"))),
+                    .background(ColorProvider(DarkGreen)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "Tap to load nature photos",
                     style = TextStyle(
-                        color = ColorProvider(android.graphics.Color.WHITE),
+                        color = ColorProvider(White),
                         fontSize = 14.sp
                     )
                 )
@@ -89,14 +91,14 @@ private fun NatureWidgetContent(
             Box(
                 modifier = GlanceModifier
                     .fillMaxWidth()
-                    .background(ColorProvider(android.graphics.Color.parseColor("#99000000")))
+                    .background(ColorProvider(SemiTransparentBlack))
                     .padding(8.dp)
             ) {
                 Column {
                     Text(
                         text = data.commonName,
                         style = TextStyle(
-                            color = ColorProvider(android.graphics.Color.WHITE),
+                            color = ColorProvider(White),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
                         ),
@@ -106,7 +108,7 @@ private fun NatureWidgetContent(
                         Text(
                             text = data.scientificName,
                             style = TextStyle(
-                                color = ColorProvider(android.graphics.Color.parseColor("#CCCCCC")),
+                                color = ColorProvider(LightGray),
                                 fontSize = 11.sp
                             ),
                             maxLines = 1
@@ -116,7 +118,7 @@ private fun NatureWidgetContent(
                         Text(
                             text = "📍 ${data.location}",
                             style = TextStyle(
-                                color = ColorProvider(android.graphics.Color.parseColor("#AAAAAA")),
+                                color = ColorProvider(MediumGray),
                                 fontSize = 10.sp
                             ),
                             maxLines = 1
