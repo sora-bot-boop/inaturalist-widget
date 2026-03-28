@@ -33,6 +33,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        val appContext = applicationContext
+        val repository = NatureRepository(appContext)
+        val settingsManager = SettingsManager.getInstance(appContext)
+        
         setContent {
             NatureWidgetTheme {
                 Surface(
@@ -40,10 +44,10 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     MainScreen(
-                        repository = NatureRepository(this),
-                        settingsManager = SettingsManager.getInstance(this),
+                        repository = repository,
+                        settingsManager = settingsManager,
                         onStartWidgetUpdates = {
-                            NatureWidgetWorker.enqueuePeriodic(this)
+                            NatureWidgetWorker.enqueuePeriodic(appContext)
                         }
                     )
                 }

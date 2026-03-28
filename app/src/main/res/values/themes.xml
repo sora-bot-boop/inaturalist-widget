@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.NatureWidget" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.NatureWidget" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="android:statusBarColor">#1a472a</item>
+        <item name="colorPrimary">#1a472a</item>
+        <item name="colorPrimaryDark">#0d2415</item>
+        <item name="colorAccent">#4CAF50</item>
     </style>
 </resources>
