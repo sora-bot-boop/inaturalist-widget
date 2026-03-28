@@ -9,7 +9,7 @@ interface INaturalistApi {
     
     @GET("observations")
     suspend fun getObservations(
-        @Query("quality_grade") qualityGrade: String = "research",
+        @Query("quality_grade") qualityGrade: String? = null,
         @Query("photos") photos: Boolean = true,
         @Query("per_page") perPage: Int = 20,
         @Query("order_by") orderBy: String = "random",

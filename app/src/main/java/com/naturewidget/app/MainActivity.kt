@@ -95,9 +95,13 @@ fun MainScreen(
     }
     
     fun saveSettings() {
-        settings.setUserLogin(userLogin)
-        savedUserLogin = userLogin.trim()
-        loadNewObservation()
+        try {
+            settings.setUserLogin(userLogin)
+            savedUserLogin = userLogin.trim()
+            loadNewObservation()
+        } catch (e: Exception) {
+            error = "Error saving settings: ${e.message}"
+        }
     }
     
     // Start widget updates on launch

@@ -34,7 +34,13 @@ class NatureRepository(private val context: Context) {
         radius: Int? = null
     ): Result<Observation> = withContext(Dispatchers.IO) {
         try {
+            // Only require research grade when not filtering by user
+            val qualityGrade = if (userLogin.isNullOrBlank()) "research" else null
+            
+            Log.d(TAG, "Fetching observations - user: $userLogin, quality: $qualityGrade")
+            
             val response = api.getObservations(
+                qualityGrade = qualityGrade,
                 taxonId = taxonId,
                 iconicTaxa = iconicTaxa,
                 userLogin = userLogin?.takeIf { it.isNotBlank() },
@@ -45,6 +51,8 @@ class NatureRepository(private val context: Context) {
                 orderBy = "random"
             )
             
+            Log.d(TAG, "Got ${response.results.size} results, total: ${response.totalResults}")
+            
             val observation = response.results
                 .filter { it.photos.isNotEmpty() }
                 .randomOrNull()
@@ -52,7 +60,12 @@ class NatureRepository(private val context: Context) {
             if (observation != null) {
                 Result.success(observation)
             } else {
-                Result.failure(Exception("No observations found"))
+                val msg = if (userLogin.isNullOrBlank()) {
+                    "No observations found"
+                } else {
+                    "No observations with photos found for user '$userLogin'. Check the username?"
+                }
+                Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching observation", e)
