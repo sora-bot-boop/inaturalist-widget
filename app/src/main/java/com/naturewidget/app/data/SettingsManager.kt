@@ -16,7 +16,7 @@ class SettingsManager private constructor(private val context: Context) {
         private const val KEY_REFRESH_INTERVAL = "refresh_interval_minutes"
         private const val KEY_LOCALE = "locale"
         private const val KEY_MODE = "widget_mode"
-        private const val DEFAULT_REFRESH_INTERVAL = 15 // minutes
+        private const val DEFAULT_REFRESH_INTERVAL = 30 // minutes
         
         // Widget modes
         enum class WidgetMode(val displayName: String, val description: String) {
@@ -64,7 +64,7 @@ class SettingsManager private constructor(private val context: Context) {
     }
     
     fun setRefreshInterval(minutes: Int) {
-        prefs.edit().putInt(KEY_REFRESH_INTERVAL, minutes.coerceIn(1, 60)).apply()
+        prefs.edit().putInt(KEY_REFRESH_INTERVAL, minutes.coerceIn(15, 120)).apply()
     }
     
     fun getLocaleSetting(): String {

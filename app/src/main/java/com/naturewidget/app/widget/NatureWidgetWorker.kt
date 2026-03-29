@@ -39,11 +39,8 @@ class NatureWidgetWorker(
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
             
-            // WorkManager minimum interval is 15 minutes
-            val effectiveInterval = intervalMinutes.coerceAtLeast(15)
-            
             val request = PeriodicWorkRequestBuilder<NatureWidgetWorker>(
-                effectiveInterval, TimeUnit.MINUTES,
+                intervalMinutes, TimeUnit.MINUTES,
                 5, TimeUnit.MINUTES // Flex interval
             )
                 .setConstraints(constraints)
@@ -57,7 +54,7 @@ class NatureWidgetWorker(
                     request
                 )
             
-            Log.d(TAG, "Periodic work scheduled: every $intervalMinutes minutes (effective: $effectiveInterval)")
+            Log.d(TAG, "Periodic work scheduled: every $intervalMinutes minutes")
         }
         
         /**
