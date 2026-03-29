@@ -33,15 +33,18 @@ class NatureWidgetWorker(
          */
         fun enqueuePeriodic(context: Context) {
             val settings = SettingsManager.getInstance(context)
-            val intervalHours = settings.getRefreshInterval().toLong()
+            val intervalMinutes = settings.getRefreshInterval().toLong()
             
             val constraints = Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.CONNECTED)
                 .build()
             
+            // WorkManager minimum interval is 15 minutes
+            val effectiveInterval = intervalMinutes.coerceAtLeast(15)
+            
             val request = PeriodicWorkRequestBuilder<NatureWidgetWorker>(
-                intervalHours, TimeUnit.HOURS,
-                15, TimeUnit.MINUTES // Flex interval
+                effectiveInterval, TimeUnit.MINUTES,
+                5, TimeUnit.MINUTES // Flex interval
             )
                 .setConstraints(constraints)
                 .setInitialDelay(1, TimeUnit.MINUTES) // Small delay on first run
@@ -54,7 +57,7 @@ class NatureWidgetWorker(
                     request
                 )
             
-            Log.d(TAG, "Periodic work scheduled: every $intervalHours hours")
+            Log.d(TAG, "Periodic work scheduled: every $intervalMinutes minutes (effective: $effectiveInterval)")
         }
         
         /**

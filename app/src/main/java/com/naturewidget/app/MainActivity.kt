@@ -285,8 +285,8 @@ fun MainScreen(
                         Slider(
                             value = refreshInterval,
                             onValueChange = { refreshInterval = it },
-                            valueRange = 1f..24f,
-                            steps = 22, // 1, 2, 3, ... 24
+                            valueRange = 1f..60f,
+                            steps = 58, // 1, 2, 3, ... 60
                             modifier = Modifier.weight(1f),
                             colors = SliderDefaults.colors(
                                 thumbColor = Color(0xFF1a472a),
@@ -297,15 +297,15 @@ fun MainScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         
                         Text(
-                            text = "${refreshInterval.roundToInt()}h",
+                            text = "${refreshInterval.roundToInt()} min",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
-                            modifier = Modifier.width(40.dp)
+                            modifier = Modifier.width(60.dp)
                         )
                     }
                     
                     Text(
-                        text = "How often the widget loads a new photo",
+                        text = "How often the widget loads a new photo (min 15 min due to Android limits)",
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
