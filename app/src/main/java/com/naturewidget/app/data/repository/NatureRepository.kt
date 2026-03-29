@@ -5,12 +5,15 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import com.naturewidget.app.data.SettingsManager
+import com.naturewidget.app.data.SettingsManager.Companion.WidgetMode
 import com.naturewidget.app.data.api.NetworkModule
 import com.naturewidget.app.data.api.Observation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.*
 
 class NatureRepository(private val context: Context) {
     
@@ -22,6 +25,88 @@ class NatureRepository(private val context: Context) {
         private const val CACHE_DIR = "nature_images"
         private const val CURRENT_IMAGE = "current_observation.jpg"
         private const val CURRENT_DATA = "current_observation.txt"
+        private const val DISCOVER_RADIUS_KM = 50 // km radius for discover mode
+        private const val DISCOVER_DAYS_BACK = 7 // days back for recent observations
+    }
+    
+    /**
+     * Fetch observation based on current widget mode
+     */
+    suspend fun getObservationForCurrentMode(
+        currentLat: Double? = null,
+        currentLng: Double? = null
+    ): Result<Observation> {
+        val mode = settings.getWidgetMode()
+        val userLogin = settings.getUserLogin()
+        
+        Log.d(TAG, "Fetching observation for mode: $mode")
+        
+        return when (mode) {
+            WidgetMode.PERSONAL -> {
+                if (userLogin.isBlank()) {
+                    Result.failure(Exception("Please set your iNaturalist username in settings for Personal mode"))
+                } else {
+                    getRandomObservation(userLogin = userLogin)
+                }
+            }
+            WidgetMode.ALL -> {
+                getRandomObservation()
+            }
+            WidgetMode.DISCOVER -> {
+                if (currentLat == null || currentLng == null) {
+                    Result.failure(Exception("Location required for Discover mode. Please enable location access."))
+                } else {
+                    getDiscoverObservation(currentLat, currentLng)
+                }
+            }
+        }
+    }
+    
+    /**
+     * Fetch recent observations near the given location
+     */
+    private suspend fun getDiscoverObservation(
+        lat: Double,
+        lng: Double
+    ): Result<Observation> = withContext(Dispatchers.IO) {
+        try {
+            val locale = settings.getEffectiveLocale()
+            
+            // Calculate date for "recent" observations (last 7 days)
+            val calendar = Calendar.getInstance()
+            calendar.add(Calendar.DAY_OF_YEAR, -DISCOVER_DAYS_BACK)
+            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            val createdAfter = dateFormat.format(calendar.time)
+            
+            Log.d(TAG, "Discover mode: lat=$lat, lng=$lng, radius=$DISCOVER_RADIUS_KM km, after=$createdAfter")
+            
+            val response = api.getObservations(
+                qualityGrade = "research",
+                lat = lat,
+                lng = lng,
+                radius = DISCOVER_RADIUS_KM,
+                createdAfter = createdAfter,
+                perPage = 30,
+                orderBy = "created_at",
+                order = "desc",
+                locale = locale
+            )
+            
+            Log.d(TAG, "Discover: Got ${response.results.size} results")
+            
+            val observation = response.results
+                .filter { it.photos.isNotEmpty() }
+                .randomOrNull()
+            
+            if (observation != null) {
+                Result.success(observation)
+            } else {
+                Result.failure(Exception("No recent observations found within ${DISCOVER_RADIUS_KM}km. Try again later!"))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in discover mode", e)
+            Result.failure(e)
+        }
     }
     
     /**

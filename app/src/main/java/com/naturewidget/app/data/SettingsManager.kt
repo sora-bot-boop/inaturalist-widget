@@ -15,7 +15,15 @@ class SettingsManager private constructor(private val context: Context) {
         private const val KEY_USER_LOGIN = "user_login"
         private const val KEY_REFRESH_INTERVAL = "refresh_interval_hours"
         private const val KEY_LOCALE = "locale"
+        private const val KEY_MODE = "widget_mode"
         private const val DEFAULT_REFRESH_INTERVAL = 4 // hours
+        
+        // Widget modes
+        enum class WidgetMode(val displayName: String, val description: String) {
+            PERSONAL("Personal", "Your own observations"),
+            ALL("All", "Random from everyone"),
+            DISCOVER("Discover", "Recent observations near you")
+        }
         
         // Supported languages for iNaturalist common names
         val SUPPORTED_LOCALES = listOf(
@@ -78,5 +86,18 @@ class SettingsManager private constructor(private val context: Context) {
         } else {
             setting
         }
+    }
+    
+    fun getWidgetMode(): WidgetMode {
+        val modeName = prefs.getString(KEY_MODE, WidgetMode.ALL.name) ?: WidgetMode.ALL.name
+        return try {
+            WidgetMode.valueOf(modeName)
+        } catch (e: IllegalArgumentException) {
+            WidgetMode.ALL
+        }
+    }
+    
+    fun setWidgetMode(mode: WidgetMode) {
+        prefs.edit().putString(KEY_MODE, mode.name).apply()
     }
 }

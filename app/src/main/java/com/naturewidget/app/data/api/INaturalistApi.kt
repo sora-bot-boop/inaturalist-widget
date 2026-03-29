@@ -19,7 +19,9 @@ interface INaturalistApi {
         @Query("lat") lat: Double? = null,
         @Query("lng") lng: Double? = null,
         @Query("radius") radius: Int? = null,
-        @Query("locale") locale: String = "en"
+        @Query("locale") locale: String = "en",
+        @Query("created_d1") createdAfter: String? = null, // ISO date for recent observations
+        @Query("order") order: String? = null // "desc" for newest first
     ): ObservationsResponse
     
     companion object {

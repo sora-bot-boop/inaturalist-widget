@@ -1,12 +1,20 @@
 package com.naturewidget.app.widget
 
+import android.Manifest
 import android.content.Context
+import android.content.pm.PackageManager
+import android.location.Location
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.appwidget.updateAll
 import androidx.work.*
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.Tasks
 import com.naturewidget.app.data.SettingsManager
+import com.naturewidget.app.data.SettingsManager.Companion.WidgetMode
 import com.naturewidget.app.data.repository.NatureRepository
 import java.util.concurrent.TimeUnit
 
@@ -86,13 +94,27 @@ class NatureWidgetWorker(
         return try {
             val repository = NatureRepository(context)
             val settings = SettingsManager.getInstance(context)
+            val mode = settings.getWidgetMode()
             
-            // Get user settings
-            val userLogin = settings.getUserLogin().takeIf { it.isNotBlank() }
+            // Get location if in Discover mode
+            var currentLat: Double? = null
+            var currentLng: Double? = null
             
-            // Fetch a random observation
-            val observationResult = repository.getRandomObservation(
-                userLogin = userLogin
+            if (mode == WidgetMode.DISCOVER) {
+                val location = getCurrentLocation()
+                if (location != null) {
+                    currentLat = location.latitude
+                    currentLng = location.longitude
+                    Log.d(TAG, "Got location: $currentLat, $currentLng")
+                } else {
+                    Log.w(TAG, "Could not get location for Discover mode")
+                }
+            }
+            
+            // Fetch observation based on current mode
+            val observationResult = repository.getObservationForCurrentMode(
+                currentLat = currentLat,
+                currentLng = currentLng
             )
             
             if (observationResult.isFailure) {
@@ -123,6 +145,35 @@ class NatureWidgetWorker(
             } else {
                 Result.failure()
             }
+        }
+    }
+    
+    /**
+     * Get current location for Discover mode
+     */
+    private fun getCurrentLocation(): Location? {
+        // Check for location permission
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        if (!hasPermission) {
+            Log.w(TAG, "No location permission")
+            return null
+        }
+        
+        return try {
+            val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            val locationTask = fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                null
+            )
+            // Wait for location with timeout
+            Tasks.await(locationTask, 10, TimeUnit.SECONDS)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting location", e)
+            null
         }
     }
 }
