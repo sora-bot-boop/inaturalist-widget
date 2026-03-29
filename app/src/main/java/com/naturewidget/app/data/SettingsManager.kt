@@ -2,8 +2,9 @@ package com.naturewidget.app.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import java.util.Locale
 
-class SettingsManager private constructor(context: Context) {
+class SettingsManager private constructor(private val context: Context) {
     
     private val prefs: SharedPreferences = context.getSharedPreferences(
         "nature_widget_prefs", 
@@ -13,7 +14,24 @@ class SettingsManager private constructor(context: Context) {
     companion object {
         private const val KEY_USER_LOGIN = "user_login"
         private const val KEY_REFRESH_INTERVAL = "refresh_interval_hours"
+        private const val KEY_LOCALE = "locale"
         private const val DEFAULT_REFRESH_INTERVAL = 4 // hours
+        
+        // Supported languages for iNaturalist common names
+        val SUPPORTED_LOCALES = listOf(
+            "auto" to "Auto (Device Language)",
+            "en" to "English",
+            "de" to "Deutsch",
+            "fr" to "Français",
+            "es" to "Español",
+            "it" to "Italiano",
+            "pt" to "Português",
+            "nl" to "Nederlands",
+            "pl" to "Polski",
+            "ru" to "Русский",
+            "ja" to "日本語",
+            "zh" to "中文"
+        )
         
         @Volatile
         private var INSTANCE: SettingsManager? = null
@@ -39,5 +57,26 @@ class SettingsManager private constructor(context: Context) {
     
     fun setRefreshInterval(hours: Int) {
         prefs.edit().putInt(KEY_REFRESH_INTERVAL, hours.coerceIn(1, 24)).apply()
+    }
+    
+    fun getLocaleSetting(): String {
+        return prefs.getString(KEY_LOCALE, "auto") ?: "auto"
+    }
+    
+    fun setLocale(locale: String) {
+        prefs.edit().putString(KEY_LOCALE, locale).apply()
+    }
+    
+    /**
+     * Returns the actual locale code to use for API calls.
+     * If set to "auto", returns the device's language code.
+     */
+    fun getEffectiveLocale(): String {
+        val setting = getLocaleSetting()
+        return if (setting == "auto") {
+            Locale.getDefault().language
+        } else {
+            setting
+        }
     }
 }

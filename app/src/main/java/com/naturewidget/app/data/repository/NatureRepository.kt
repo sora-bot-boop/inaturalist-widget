@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
+import com.naturewidget.app.data.SettingsManager
 import com.naturewidget.app.data.api.NetworkModule
 import com.naturewidget.app.data.api.Observation
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +15,7 @@ import java.net.URL
 class NatureRepository(private val context: Context) {
     
     private val api = NetworkModule.api
+    private val settings = SettingsManager.getInstance(context)
     
     companion object {
         private const val TAG = "NatureRepository"
@@ -39,6 +41,9 @@ class NatureRepository(private val context: Context) {
             
             Log.d(TAG, "Fetching observations - user: $userLogin, quality: $qualityGrade")
             
+            val locale = settings.getEffectiveLocale()
+            Log.d(TAG, "Using locale: $locale")
+            
             val response = api.getObservations(
                 qualityGrade = qualityGrade,
                 taxonId = taxonId,
@@ -48,7 +53,8 @@ class NatureRepository(private val context: Context) {
                 lng = lng,
                 radius = radius,
                 perPage = 20,
-                orderBy = "random"
+                orderBy = "random",
+                locale = locale
             )
             
             Log.d(TAG, "Got ${response.results.size} results, total: ${response.totalResults}")

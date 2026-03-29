@@ -55,18 +55,24 @@ fun MainScreen(
     var savedUserLogin by remember { mutableStateOf(settings.getUserLogin()) }
     var refreshInterval by remember { mutableStateOf(settings.getRefreshInterval().toFloat()) }
     var savedRefreshInterval by remember { mutableStateOf(settings.getRefreshInterval()) }
+    var selectedLocale by remember { mutableStateOf(settings.getLocaleSetting()) }
+    var savedLocale by remember { mutableStateOf(settings.getLocaleSetting()) }
     var settingsSaved by remember { mutableStateOf(false) }
+    var localeDropdownExpanded by remember { mutableStateOf(false) }
     
     fun hasUnsavedChanges(): Boolean {
         return userLogin.trim() != savedUserLogin || 
-               refreshInterval.roundToInt() != savedRefreshInterval
+               refreshInterval.roundToInt() != savedRefreshInterval ||
+               selectedLocale != savedLocale
     }
     
     fun saveSettings() {
         settings.setUserLogin(userLogin)
         settings.setRefreshInterval(refreshInterval.roundToInt())
+        settings.setLocale(selectedLocale)
         savedUserLogin = userLogin.trim()
         savedRefreshInterval = refreshInterval.roundToInt()
+        savedLocale = selectedLocale
         onScheduleUpdates() // Re-schedule with new interval
         settingsSaved = true
     }
@@ -175,6 +181,55 @@ fun MainScreen(
                     
                     Text(
                         text = "How often the widget loads a new photo",
+                        fontSize = 12.sp,
+                        color = Color.Gray
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Language selector
+                    Text(
+                        text = "Language",
+                        fontWeight = FontWeight.Medium,
+                        fontSize = 14.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = localeDropdownExpanded,
+                        onExpandedChange = { localeDropdownExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = SettingsManager.SUPPORTED_LOCALES.find { it.first == selectedLocale }?.second ?: "Auto",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = localeDropdownExpanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        
+                        ExposedDropdownMenu(
+                            expanded = localeDropdownExpanded,
+                            onDismissRequest = { localeDropdownExpanded = false }
+                        ) {
+                            SettingsManager.SUPPORTED_LOCALES.forEach { (code, name) ->
+                                DropdownMenuItem(
+                                    text = { Text(name) },
+                                    onClick = {
+                                        selectedLocale = code
+                                        localeDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "Language for species common names",
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
