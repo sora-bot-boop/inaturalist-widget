@@ -109,12 +109,12 @@ private fun NatureWidgetContent(
                     .fillMaxWidth()
                     .padding(12.dp)
             ) {
-                // Common name - larger, bold, with shadow simulation via multiple layers
+                // Common name - larger, bold
                 Text(
                     text = data.commonName,
                     style = TextStyle(
                         color = ColorProvider(White),
-                        fontSize = 20.sp,
+                        fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     ),
                     maxLines = 2
@@ -124,7 +124,7 @@ private fun NatureWidgetContent(
                         text = data.scientificName,
                         style = TextStyle(
                             color = ColorProvider(LightGray),
-                            fontSize = 14.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         ),
                         maxLines = 1
