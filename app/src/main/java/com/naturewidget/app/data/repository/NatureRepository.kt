@@ -108,11 +108,13 @@ class NatureRepository(private val context: Context) {
             
             // Save observation data
             val dataFile = File(cacheDir, CURRENT_DATA)
+            val observationUrl = "https://www.inaturalist.org/observations/${observation.id}"
             val data = buildString {
                 appendLine(observation.taxon?.preferredCommonName ?: observation.speciesGuess ?: "Unknown species")
                 appendLine(observation.taxon?.name ?: "")
                 appendLine(observation.placeGuess ?: "")
                 appendLine(photo.attribution ?: "")
+                appendLine(observationUrl)
             }
             dataFile.writeText(data)
             
@@ -147,7 +149,8 @@ class NatureRepository(private val context: Context) {
             commonName = lines.getOrNull(0) ?: "",
             scientificName = lines.getOrNull(1) ?: "",
             location = lines.getOrNull(2) ?: "",
-            attribution = lines.getOrNull(3) ?: ""
+            attribution = lines.getOrNull(3) ?: "",
+            observationUrl = lines.getOrNull(4) ?: ""
         )
     }
 }
@@ -156,5 +159,6 @@ data class ObservationDisplayData(
     val commonName: String,
     val scientificName: String,
     val location: String,
-    val attribution: String
+    val attribution: String,
+    val observationUrl: String = ""
 )
