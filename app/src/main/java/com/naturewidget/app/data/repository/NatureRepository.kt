@@ -26,7 +26,7 @@ class NatureRepository(private val context: Context) {
         private const val CURRENT_IMAGE = "current_observation.jpg"
         private const val CURRENT_DATA = "current_observation.txt"
         private const val DISCOVER_RADIUS_KM = 50 // km radius for discover mode
-        private const val DISCOVER_DAYS_BACK = 7 // days back for recent observations
+        private const val DISCOVER_DAYS_BACK = 30 // days back for recent observations (wider pool)
     }
     
     /**
@@ -86,9 +86,8 @@ class NatureRepository(private val context: Context) {
                 lng = lng,
                 radius = DISCOVER_RADIUS_KM,
                 createdAfter = createdAfter,
-                perPage = 30,
-                orderBy = "created_at",
-                order = "desc",
+                perPage = 50,
+                orderBy = "random",  // Randomize at API level for variety
                 locale = locale
             )
             
