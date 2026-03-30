@@ -149,7 +149,9 @@ class NatureWidgetWorker(
     }
     
     /**
-     * Get current location for Discover mode
+     * Get current location for Discover mode.
+     * Falls back to last known location if current location unavailable
+     * (common in background workers due to Android restrictions).
      */
     private fun getCurrentLocation(): Location? {
         // Check for location permission
@@ -165,12 +167,31 @@ class NatureWidgetWorker(
         
         return try {
             val fusedLocationClient = LocationServices.getFusedLocationProviderClient(context)
+            
+            // Try current location first
             val locationTask = fusedLocationClient.getCurrentLocation(
                 Priority.PRIORITY_BALANCED_POWER_ACCURACY,
                 null
             )
-            // Wait for location with timeout
-            Tasks.await(locationTask, 10, TimeUnit.SECONDS)
+            val currentLocation = Tasks.await(locationTask, 10, TimeUnit.SECONDS)
+            
+            if (currentLocation != null) {
+                Log.d(TAG, "Got current location")
+                return currentLocation
+            }
+            
+            // Fallback: last known location (more reliable in background)
+            Log.d(TAG, "Current location null, falling back to lastLocation")
+            val lastLocationTask = fusedLocationClient.lastLocation
+            val lastLocation = Tasks.await(lastLocationTask, 5, TimeUnit.SECONDS)
+            
+            if (lastLocation != null) {
+                Log.d(TAG, "Using last known location")
+            } else {
+                Log.w(TAG, "No location available (current or last)")
+            }
+            
+            lastLocation
         } catch (e: Exception) {
             Log.e(TAG, "Error getting location", e)
             null
